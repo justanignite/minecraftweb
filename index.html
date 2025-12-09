@@ -1,3 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Space Flappy</title>
+  <style>
+    body { margin: 0; background: black; overflow: hidden; touch-action: none; }
+    canvas { display: block; margin: 0 auto; background: black; }
+    #score, #highscore { position: absolute; width: 100%; text-align: center; font-family: Arial; color: white; text-shadow: 2px 2px 2px black; }
+    #score { top: 20px; font-size: 32px; }
+    #highscore { top: 60px; font-size: 28px; color: yellow; }
+    .credits { position: absolute; top: 10px; left: 10px; font-size: 14px; color: white; opacity: 0.8; line-height: 1.2; }
+  </style>
+</head>
+<body>
+
+<div class="credits">By: Ignite<br>Version 1.19</div>
+<div id="score">0</div>
+<div id="highscore">HIGHSCORE: 0</div>
+<canvas id="game"></canvas>
+
 <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
@@ -164,3 +186,9 @@ function loop() {
 
 loop();
 </script>
+
+
+</body>
+</html>
+
+
