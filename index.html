@@ -3,32 +3,148 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Minecraft Tips Site</title>
+  <title>Flappy Bird</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #1e1e1e;
-      color: white;
       margin: 0;
-      padding: 20px;
+      background: #70c5ce;
+      overflow: hidden;
+      touch-action: none;
     }
-    h1 {
-      text-align: center;
+
+    canvas {
+      display: block;
+      margin: 0 auto;
+      background: #70c5ce;
     }
-    .box {
-      background: #2c2c2c;
-      padding: 20px;
-      border-radius: 10px;
-      max-width: 600px;
-      margin: 50px auto;
+
+    #score {
+      position: absolute;
+      top: 20px;
+      width: 100%;
       text-align: center;
+      font-size: 32px;
+      font-family: Arial, sans-serif;
+      color: white;
+      text-shadow: 2px 2px 2px black;
     }
   </style>
 </head>
 <body>
-  <div class="box">
-    <h1>Welcome to Art's Site</h1>
-    <p>This is a test page. If you can see this from your phone, everything works!</p>
-  </div>
+
+<div id="score">0</div>
+<canvas id="game"></canvas>
+
+<script>
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d");
+
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  // Bird
+  const bird = {
+    x: canvas.width / 4,
+    y: canvas.height / 2,
+    width: 40,
+    height: 40,
+    gravity: 0.5,
+    lift: -10,
+    velocity: 0
+  };
+
+  let pipes = [];
+  let score = 0;
+  let gameOver = false;
+
+  function flap() {
+    if (gameOver) location.reload(); 
+    bird.velocity = bird.lift;
+  }
+
+  document.addEventListener("keydown", flap);
+  document.addEventListener("touchstart", flap);
+
+  function addPipe() {
+    const gap = 160;
+    const top = Math.random() * (canvas.height - gap - 100) + 50;
+    pipes.push({
+      x: canvas.width,
+      width: 60,
+      top: top,
+      bottom: top + gap
+    });
+  }
+
+  setInterval(addPipe, 1500);
+  addPipe();
+
+  function update() {
+    if (gameOver) return;
+
+    bird.velocity += bird.gravity;
+    bird.y += bird.velocity;
+
+    // ground / ceiling
+    if (bird.y + bird.height > canvas.height || bird.y < 0) {
+      gameOver = true;
+    }
+
+    // move pipes
+    pipes.forEach(pipe => {
+      pipe.x -= 4;
+
+      // collision
+      if (
+        bird.x < pipe.x + pipe.width &&
+        bird.x + bird.width > pipe.x &&
+        (bird.y < pipe.top || bird.y + bird.height > pipe.bottom)
+      ) {
+        gameOver = true;
+      }
+
+      // score
+      if (pipe.x + pipe.width < bird.x && !pipe.scored) {
+        score++;
+        document.getElementById("score").textContent = score;
+        pipe.scored = true;
+      }
+    });
+
+    // remove off-screen pipes
+    pipes = pipes.filter(pipe => pipe.x + pipe.width > 0);
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // bird
+    ctx.fillStyle = "yellow";
+    ctx.fillRect(bird.x, bird.y, bird.width, bird.height);
+
+    // pipes
+    ctx.fillStyle = "green";
+    pipes.forEach(pipe => {
+      ctx.fillRect(pipe.x, 0, pipe.width, pipe.top);
+      ctx.fillRect(pipe.x, pipe.bottom, pipe.width, canvas.height - pipe.bottom);
+    });
+
+    if (gameOver) {
+      ctx.fillStyle = "red";
+      ctx.font = "50px Arial";
+      ctx.fillText("GAME OVER", canvas.width / 2 - 150, canvas.height / 2);
+      ctx.font = "25px Arial";
+      ctx.fillText("Tap / Press Any Key to Restart", canvas.width / 2 - 180, canvas.height / 2 + 40);
+    }
+  }
+
+  function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  loop();
+</script>
 </body>
 </html>
