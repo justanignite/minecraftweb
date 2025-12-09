@@ -24,12 +24,14 @@ export default async function handler(req, res) {
   } else if (req.method === "POST") {
     const { score } = req.body;
     if (typeof score !== "number") return res.status(400).json({ error: "Invalid score" });
-    let current = await readHighscore();
+    
+    const current = await readHighscore(); // always read current highscore first
     if (score > current) {
       await writeHighscore(score);
-      current = score;
+      res.status(200).json({ score }); // new highscore
+    } else {
+      res.status(200).json({ score: current }); // previous highscore
     }
-    res.status(200).json({ score: current });
   } else {
     res.status(405).end();
   }
