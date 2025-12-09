@@ -10,6 +10,7 @@
       background: black;
       overflow: hidden;
       touch-action: none;
+      
     }
 
     canvas {
@@ -28,10 +29,22 @@
       color: white;
       text-shadow: 2px 2px 2px black;
     }
+    .credits {
+      position: absolute;
+      top: 10px;
+       left: 10px;
+       color: white;
+       font-size: 14px;
+       opacity: 0.8;
+       font-family: Arial, sans-serif;
+       line-height: 1.2;
+    }
+
   </style>
 </head>
 <body>
 
+<div class="credits">By: Ignite<br>Version 1.2</div>
 <div id="score">0</div>
 <canvas id="game"></canvas>
 
@@ -42,14 +55,14 @@
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
 
-  // Bird (now spaceship)
+  // Ship
   const ship = {
     x: canvas.width / 4,
     y: canvas.height / 2,
     width: 45,
     height: 30,
-    gravity: 0.5,
-    lift: -10,
+    gravity: 0.32,  // slower fall
+    lift: -9,
     velocity: 0
   };
 
@@ -66,7 +79,7 @@
   document.addEventListener("touchstart", flap);
 
   function addPipe() {
-    const gap = 230; // bigger gap (easier)
+    const gap = 230;
     const top = Math.random() * (canvas.height - gap - 150) + 50;
 
     pipes.push({
@@ -87,7 +100,6 @@
     ship.velocity += ship.gravity;
     ship.y += ship.velocity;
 
-    // ceiling / floor
     if (ship.y + ship.height > canvas.height || ship.y < 0) {
       gameOver = true;
     }
@@ -95,7 +107,6 @@
     pipes.forEach(pipe => {
       pipe.x -= 4;
 
-      // collision
       if (
         ship.x < pipe.x + pipe.width &&
         ship.x + ship.width > pipe.x &&
@@ -104,7 +115,6 @@
         gameOver = true;
       }
 
-      // score
       if (pipe.x + pipe.width < ship.x && !pipe.scored) {
         score++;
         document.getElementById("score").textContent = score;
@@ -115,43 +125,58 @@
     pipes = pipes.filter(pipe => pipe.x + pipe.width > 0);
   }
 
+  // Draw spaceship correct direction
   function drawShip() {
+    // body
     ctx.fillStyle = "cyan";
-
-    // main body
     ctx.fillRect(ship.x, ship.y, ship.width, ship.height);
 
-    // nose
+    // nose (triangle pointing RIGHT now)
     ctx.fillStyle = "white";
     ctx.beginPath();
     ctx.moveTo(ship.x + ship.width, ship.y + ship.height / 2);
-    ctx.lineTo(ship.x + ship.width + 12, ship.y + ship.height / 2 - 8);
-    ctx.lineTo(ship.x + ship.width + 12, ship.y + ship.height / 2 + 8);
+    ctx.lineTo(ship.x + ship.width - 12, ship.y + ship.height / 2 - 8);
+    ctx.lineTo(ship.x + ship.width - 12, ship.y + ship.height / 2 + 8);
     ctx.closePath();
     ctx.fill();
 
-    // engine glow
+    // engine flame
     ctx.fillStyle = "orange";
-    ctx.fillRect(ship.x - 10, ship.y + ship.height / 2 - 5, 10, 10);
+    ctx.fillRect(ship.x + ship.width - 3, ship.y + ship.height / 2 - 4, 7, 8);
   }
 
+  // Draw pipes with REAL curved ends
   function drawPipe(pipe) {
     ctx.fillStyle = "lime";
 
-    // top pipe rectangle
+    // TOP rectangle
     ctx.fillRect(pipe.x, 0, pipe.width, pipe.top);
 
-    // bottom pipe rectangle
-    ctx.fillRect(pipe.x, pipe.bottom, pipe.width, canvas.height - pipe.bottom);
-
-    // top rounded end
+    // TOP semicircle
     ctx.beginPath();
-    ctx.arc(pipe.x + pipe.width / 2, pipe.top, pipe.width / 2, 0, Math.PI, true);
+    ctx.arc(
+      pipe.x + pipe.width / 2,
+      pipe.top,
+      pipe.width / 2,
+      Math.PI,       // left side
+      0,             // right side
+      false
+    );
     ctx.fill();
 
-    // bottom rounded end
+    // BOTTOM rectangle
+    ctx.fillRect(pipe.x, pipe.bottom, pipe.width, canvas.height - pipe.bottom);
+
+    // BOTTOM semicircle
     ctx.beginPath();
-    ctx.arc(pipe.x + pipe.width / 2, pipe.bottom, pipe.width / 2, 0, Math.PI, false);
+    ctx.arc(
+      pipe.x + pipe.width / 2,
+      pipe.bottom,
+      pipe.width / 2,
+      0,
+      Math.PI,
+      true
+    );
     ctx.fill();
   }
 
@@ -175,12 +200,9 @@
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     drawShip();
-
     pipes.forEach(pipe => drawPipe(pipe));
 
-    if (gameOver) {
-      drawGameOver();
-    }
+    if (gameOver) drawGameOver();
   }
 
   function loop() {
