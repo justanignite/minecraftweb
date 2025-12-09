@@ -40,12 +40,25 @@
        line-height: 1.2;
     }
 
+    #highscore {
+      position: absolute;
+      top: 60px;      
+      width: 100%;
+      text-align: center;
+      font-size: 28px;
+      font-family: Arial, sans-serif;
+      color: yellow;
+  text-shadow: 2px 2px 2px black;
+   }
+
+
   </style>
 </head>
 <body>
 
 <div class="credits">By: EchoIgnite<br>Version 1.3</div>
 <div id="score">0</div>
+<div id="highscore">HIGHSCORE: 0</div>
 <canvas id="game"></canvas>
 
 <script>
@@ -119,6 +132,7 @@
         score++;
         document.getElementById("score").textContent = score;
         pipe.scored = true;
+        checkHighscore();
       }
     });
 
@@ -204,6 +218,35 @@
 
     if (gameOver) drawGameOver();
   }
+
+  const highscoreDiv = document.getElementById("highscore");
+ let globalHighscore = 0;
+
+ // fetch current highscore when page loads
+ async function fetchHighscore() {
+   const res = await fetch("/api/highscore");
+   const data = await res.json();
+   globalHighscore = data.score || 0;
+   highscoreDiv.textContent = "HIGHSCORE: " + globalHighscore;
+ }
+
+ fetchHighscore();
+
+ // check if player beats highscore
+ async function checkHighscore() {
+  if (score > globalHighscore) {
+    globalHighscore = score;
+    highscoreDiv.textContent = "HIGHSCORE: " + globalHighscore;
+    alert("NEW HIGHSCORE! W!");
+    
+    await fetch("/api/highscore", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ score: globalHighscore })
+    });
+  }
+ }
+
 
   function loop() {
     update();
