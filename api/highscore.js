@@ -1,28 +1,22 @@
-import { kv } from '@vercel/kv';
+let highscore = 0; // temporary global storage
 
-export default async function handler(req, res) {
+export default function handler(req, res) {
   if (req.method === "GET") {
-    // Get the current global highscore
-    const score = (await kv.get('highscore')) || 0;
-    return res.status(200).json({ score });
-  }
-
-  if (req.method === "POST") {
+    // Return the current highscore
+    res.status(200).json({ score: highscore });
+  } 
+  else if (req.method === "POST") {
     const { score } = req.body;
-    if (typeof score !== "number") {
-      return res.status(400).json({ error: "Invalid score" });
+
+    // Update highscore only if the new score is higher
+    if (score > highscore) {
+      highscore = score;
     }
 
-    const current = (await kv.get('highscore')) || 0;
-
-    // Only update if the new score is higher
-    if (score > current) {
-      await kv.set('highscore', score);
-      return res.status(200).json({ score });
-    } else {
-      return res.status(200).json({ score: current });
-    }
+    res.status(200).json({ score: highscore });
+  } 
+  else {
+    // Method not allowed
+    res.status(405).end();
   }
-
-  return res.status(405).end(); // Method not allowed
 }
