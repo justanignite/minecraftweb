@@ -26,95 +26,175 @@ const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
+// Ship
 const ship = { x: canvas.width/4, y: canvas.height/2, width: 45, height: 30, gravity: 0.32, lift: -9, velocity: 0 };
-let pipes = [], score = 0, gameOver = false, newHighscoreThisRun = false;
+
+// Pipes and scores
+let pipes = [];
+let score = 0;
+let gameOver = false;
+let newHighscoreThisRun = false;
+
+// DOM elements
 const highscoreDiv = document.getElementById("highscore");
 let globalHighscore = 0;
 
-function flap() { if (gameOver) location.reload(); ship.velocity = ship.lift; }
-document.addEventListener("keydown", e => { if(e.code==="Space") flap(); });
+// Flap controls
+function flap() {
+  if(gameOver) location.reload();
+  ship.velocity = ship.lift;
+}
+document.addEventListener("keydown", e => { if(e.code === "Space") flap(); });
 document.addEventListener("touchstart", flap);
 
+// Add pipes periodically
 function addPipe() {
   const gap = 260;
   const top = Math.random() * (canvas.height - gap - 150) + 50;
   pipes.push({ x: canvas.width, width: 70, top, bottom: top+gap, scored: false });
 }
-setInterval(addPipe, 1500); addPipe();
+setInterval(addPipe, 1500);
+addPipe();
 
+// Fetch global highscore at page load
 async function fetchHighscore() {
   try {
     const res = await fetch("/api/highscore");
     const data = await res.json();
     globalHighscore = data.score || 0;
     highscoreDiv.textContent = "GLOBAL HIGHSCORE: " + globalHighscore;
-  } catch(e) { console.error("Failed to fetch highscore", e); }
+  } catch(e) {
+    console.error("Failed to fetch highscore", e);
+  }
 }
 fetchHighscore();
 
-async function checkHighscore() {
-  if(score > globalHighscore) {
-    globalHighscore = score;
-    highscoreDiv.textContent = "GLOBAL HIGHSCORE: " + globalHighscore;
-    newHighscoreThisRun = true;
-    try {
-      await fetch("/api/highscore", {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({score: globalHighscore})
-      });
-    } catch(e) { console.error("Failed to post highscore", e); }
-  }
-}
-
+// Update game logic
 function update() {
   if(gameOver) return;
-  ship.velocity += ship.gravity; ship.y += ship.velocity;
-  if(ship.y + ship.height > canvas.height || ship.y < 0) gameOver = true;
 
+  // Ship physics
+  ship.velocity += ship.gravity;
+  ship.y += ship.velocity;
+
+  // Hit ground or ceiling
+  if(ship.y + ship.height > canvas.height || ship.y < 0) endGame();
+
+  // Pipe collisions and scoring
   pipes.forEach(pipe => {
     pipe.x -= 4;
-    if(ship.x < pipe.x+pipe.width && ship.x+ship.width > pipe.x && (ship.y<pipe.top || ship.y+ship.height>pipe.bottom)) gameOver = true;
-    if(pipe.x + pipe.width < ship.x && !pipe.scored) { score++; document.getElementById("score").textContent=score; pipe.scored=true; checkHighscore(); }
+
+    if(ship.x < pipe.x + pipe.width &&
+       ship.x + ship.width > pipe.x &&
+       (ship.y < pipe.top || ship.y + ship.height > pipe.bottom)) {
+      endGame();
+    }
+
+    if(pipe.x + pipe.width < ship.x && !pipe.scored) {
+      score++;
+      document.getElementById("score").textContent = score;
+      pipe.scored = true;
+    }
   });
+
+  // Remove offscreen pipes
   pipes = pipes.filter(pipe => pipe.x + pipe.width > 0);
 }
 
+// End game and check highscore
+async function endGame() {
+  if(gameOver) return;
+  gameOver = true;
+
+  if(score > globalHighscore) {
+    newHighscoreThisRun = true;
+    globalHighscore = score;
+    highscoreDiv.textContent = "GLOBAL HIGHSCORE: " + globalHighscore;
+
+    // Update backend
+    try {
+      await fetch("/api/highscore", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ score: globalHighscore })
+      });
+    } catch(e) {
+      console.error("Failed to update global highscore", e);
+    }
+  }
+
+  drawGameOver();
+}
+
+// Draw functions
 function drawShip() {
-  ctx.fillStyle="cyan"; ctx.fillRect(ship.x,ship.y,ship.width,ship.height);
-  ctx.fillStyle="white"; ctx.beginPath();
-  ctx.moveTo(ship.x+ship.width, ship.y+ship.height/2);
-  ctx.lineTo(ship.x+ship.width-12, ship.y+ship.height/2-8);
-  ctx.lineTo(ship.x+ship.width-12, ship.y+ship.height/2+8);
-  ctx.closePath(); ctx.fill();
-  ctx.fillStyle="orange"; ctx.fillRect(ship.x+ship.width-3, ship.y+ship.height/2-4, 7, 8);
+  ctx.fillStyle = "cyan";
+  ctx.fillRect(ship.x, ship.y, ship.width, ship.height);
+
+  // Nose
+  ctx.fillStyle = "white";
+  ctx.beginPath();
+  ctx.moveTo(ship.x + ship.width, ship.y + ship.height/2);
+  ctx.lineTo(ship.x + ship.width - 12, ship.y + ship.height/2 - 8);
+  ctx.lineTo(ship.x + ship.width - 12, ship.y + ship.height/2 + 8);
+  ctx.closePath();
+  ctx.fill();
+
+  // Engine flame
+  ctx.fillStyle = "orange";
+  ctx.fillRect(ship.x + ship.width - 3, ship.y + ship.height/2 - 4, 7, 8);
 }
 
 function drawPipe(pipe) {
-  ctx.fillStyle="lime";
-  ctx.fillRect(pipe.x,0,pipe.width,pipe.top);
-  ctx.beginPath(); ctx.arc(pipe.x+pipe.width/2, pipe.top, pipe.width/2, Math.PI, 0, false); ctx.fill();
-  ctx.fillRect(pipe.x,pipe.bottom,pipe.width,canvas.height-pipe.bottom);
-  ctx.beginPath(); ctx.arc(pipe.x+pipe.width/2, pipe.bottom, pipe.width/2,0,Math.PI,true); ctx.fill();
+  ctx.fillStyle = "lime";
+  ctx.fillRect(pipe.x, 0, pipe.width, pipe.top);
+  ctx.beginPath();
+  ctx.arc(pipe.x + pipe.width/2, pipe.top, pipe.width/2, Math.PI, 0, false);
+  ctx.fill();
+  ctx.fillRect(pipe.x, pipe.bottom, pipe.width, canvas.height - pipe.bottom);
+  ctx.beginPath();
+  ctx.arc(pipe.x + pipe.width/2, pipe.bottom, pipe.width/2, 0, Math.PI, true);
+  ctx.fill();
 }
 
 function drawGameOver() {
-  ctx.fillStyle="rgba(0,0,0,0.7)";
-  ctx.fillRect(canvas.width/2-160,canvas.height/2-100,320,200);
-  ctx.strokeStyle="white"; ctx.lineWidth=3; ctx.strokeRect(canvas.width/2-160,canvas.height/2-100,320,200);
-  ctx.fillStyle="white"; ctx.font="40px Arial"; ctx.fillText("GAME OVER",canvas.width/2-120,canvas.height/2-30);
-  ctx.font="25px Arial"; ctx.fillText("noob.",canvas.width/2-150,canvas.height/2+20);
-  if(newHighscoreThisRun){ alert("New Highscore!"); newHighscoreThisRun=false; }
+  ctx.fillStyle = "rgba(0,0,0,0.7)";
+  ctx.fillRect(canvas.width/2 - 160, canvas.height/2 - 100, 320, 200);
+
+  ctx.strokeStyle = "white";
+  ctx.lineWidth = 3;
+  ctx.strokeRect(canvas.width/2 - 160, canvas.height/2 - 100, 320, 200);
+
+  ctx.fillStyle = "white";
+  ctx.font = "40px Arial";
+  ctx.fillText("GAME OVER", canvas.width/2 - 120, canvas.height/2 - 30);
+
+  ctx.font = "25px Arial";
+  ctx.fillText("noob.", canvas.width/2 - 150, canvas.height/2 + 20);
+
+  if(newHighscoreThisRun) {
+    alert("New Highscore!");
+    newHighscoreThisRun = false;
+  }
 }
 
+// Draw loop
 function draw() {
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  drawShip(); pipes.forEach(drawPipe);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawShip();
+  pipes.forEach(drawPipe);
   if(gameOver) drawGameOver();
 }
 
-function loop() { update(); draw(); requestAnimationFrame(loop); }
+// Main game loop
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
 loop();
 </script>
+
 </body>
 </html>
