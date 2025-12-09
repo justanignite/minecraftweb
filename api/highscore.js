@@ -2,28 +2,20 @@ import { kv } from '@vercel/kv';
 
 export default async function handler(req, res) {
   if (req.method === "GET") {
-    // Return the current global highscore
-    const score = (await kv.get('highscore')) || 0;
+    const score = (await kv.get('highscore')) || 0; // persistent global score
     res.status(200).json({ score });
   } else if (req.method === "POST") {
     const { score } = req.body;
+    if (typeof score !== "number") return res.status(400).json({ error: "Invalid score" });
 
-    // Validate
-    if (typeof score !== "number") {
-      return res.status(400).json({ error: "Invalid score" });
-    }
-
-    // Get the current highscore
     const current = (await kv.get('highscore')) || 0;
-
-    // Only update if the new score is higher
     if (score > current) {
       await kv.set('highscore', score);
-      return res.status(200).json({ score }); // return new highscore
+      res.status(200).json({ score });
     } else {
-      return res.status(200).json({ score: current }); // return existing highscore
+      res.status(200).json({ score: current });
     }
   } else {
-    res.status(405).end(); // Method not allowed
+    res.status(405).end();
   }
 }
