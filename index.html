@@ -56,7 +56,7 @@
 </head>
 <body>
 
-<div class="credits">By: EchoIgnite<br>Version 1.3</div>
+<div class="credits">By: Pratheep<br>Version 1.19</div>
 <div id="score">0</div>
 <div id="highscore">HIGHSCORE: 0</div>
 <canvas id="game"></canvas>
@@ -93,7 +93,7 @@
   document.addEventListener("touchstart", flap);
 
   function addPipe() {
-    const gap = 230;
+    const gap = 260;
     const top = Math.random() * (canvas.height - gap - 150) + 50;
 
     pipes.push({
@@ -208,10 +208,10 @@
     ctx.fillText("GAME OVER", canvas.width / 2 - 120, canvas.height / 2 - 30);
 
     ctx.font = "25px Arial";
-    ctx.fillText("Wanna Retry noob?", canvas.width / 2 - 150, canvas.height / 2 + 20);
+    ctx.fillText("noob.", canvas.width / 2 - 150, canvas.height / 2 + 20);
 
     if (newHighscoreThisRun) {
-      alert("NEW HIGHSCORE! W!");
+      alert("New Highscore bruh..");
       newHighscoreThisRun = false; // reset the flag
     }
 
@@ -234,7 +234,7 @@
    const res = await fetch("/api/highscore");
    const data = await res.json();
    globalHighscore = data.score || 0;
-   highscoreDiv.textContent = "HIGHSCORE: " + globalHighscore;
+   highscoreDiv.textContent = "GLOBAL HIGHSCORE: " + globalHighscore;
  }
 
  fetchHighscore();
@@ -243,7 +243,7 @@
  async function checkHighscore() {
   if (score > globalHighscore) {
     globalHighscore = score;
-    highscoreDiv.textContent = "HIGHSCORE: " + globalHighscore;
+    highscoreDiv.textContent = "GLOBAL HIGHSCORE: " + globalHighscore;
     newHighscoreThisRun = true; // mark that player made a new highscore
     await fetch("/api/highscore", {
       method: "POST",
