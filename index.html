@@ -82,6 +82,7 @@
   let pipes = [];
   let score = 0;
   let gameOver = false;
+  let newHighscoreThisRun = false;
 
   function flap() {
     if (gameOver) location.reload();
@@ -208,6 +209,12 @@
 
     ctx.font = "25px Arial";
     ctx.fillText("Wanna Retry noob?", canvas.width / 2 - 150, canvas.height / 2 + 20);
+
+    if (newHighscoreThisRun) {
+      alert("NEW HIGHSCORE! W!");
+      newHighscoreThisRun = false; // reset the flag
+    }
+
   }
 
   function draw() {
@@ -237,8 +244,7 @@
   if (score > globalHighscore) {
     globalHighscore = score;
     highscoreDiv.textContent = "HIGHSCORE: " + globalHighscore;
-    alert("NEW HIGHSCORE! W!");
-    
+    newHighscoreThisRun = true; // mark that player made a new highscore
     await fetch("/api/highscore", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
