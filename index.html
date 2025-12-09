@@ -1,25 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Space Flappy</title>
-  <style>
-    body { margin: 0; background: black; overflow: hidden; touch-action: none; }
-    canvas { display: block; margin: 0 auto; background: black; }
-    #score, #highscore { position: absolute; width: 100%; text-align: center; font-family: Arial; color: white; text-shadow: 2px 2px 2px black; }
-    #score { top: 20px; font-size: 32px; }
-    #highscore { top: 60px; font-size: 28px; color: yellow; }
-    .credits { position: absolute; top: 10px; left: 10px; font-size: 14px; color: white; opacity: 0.8; line-height: 1.2; }
-  </style>
-</head>
-<body>
-
-<div class="credits">By: Ignite<br>Version 1.19</div>
-<div id="score">0</div>
-<div id="highscore">HIGHSCORE: 0</div>
-<canvas id="game"></canvas>
-
 <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
@@ -73,14 +51,11 @@ fetchHighscore();
 function update() {
   if(gameOver) return;
 
-  // Ship physics
   ship.velocity += ship.gravity;
   ship.y += ship.velocity;
 
-  // Hit ground or ceiling
   if(ship.y + ship.height > canvas.height || ship.y < 0) endGame();
 
-  // Pipe collisions and scoring
   pipes.forEach(pipe => {
     pipe.x -= 4;
 
@@ -97,7 +72,6 @@ function update() {
     }
   });
 
-  // Remove offscreen pipes
   pipes = pipes.filter(pipe => pipe.x + pipe.width > 0);
 }
 
@@ -111,7 +85,6 @@ async function endGame() {
     globalHighscore = score;
     highscoreDiv.textContent = "GLOBAL HIGHSCORE: " + globalHighscore;
 
-    // Update backend
     try {
       await fetch("/api/highscore", {
         method: "POST",
@@ -131,7 +104,6 @@ function drawShip() {
   ctx.fillStyle = "cyan";
   ctx.fillRect(ship.x, ship.y, ship.width, ship.height);
 
-  // Nose
   ctx.fillStyle = "white";
   ctx.beginPath();
   ctx.moveTo(ship.x + ship.width, ship.y + ship.height/2);
@@ -140,7 +112,6 @@ function drawShip() {
   ctx.closePath();
   ctx.fill();
 
-  // Engine flame
   ctx.fillStyle = "orange";
   ctx.fillRect(ship.x + ship.width - 3, ship.y + ship.height/2 - 4, 7, 8);
 }
@@ -178,7 +149,6 @@ function drawGameOver() {
   }
 }
 
-// Draw loop
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawShip();
@@ -186,7 +156,6 @@ function draw() {
   if(gameOver) drawGameOver();
 }
 
-// Main game loop
 function loop() {
   update();
   draw();
@@ -195,6 +164,3 @@ function loop() {
 
 loop();
 </script>
-
-</body>
-</html>
