@@ -42,7 +42,7 @@
 
     #highscore {
       position: absolute;
-      top: 20px;
+      top: 40px;
       right: 20px;
       width: auto;
       text-align: right;
@@ -54,16 +54,19 @@
   </style>
 </head>
 <body>
-  <div class="credits">By: Pratheep<br>Version 1.42</div>
+  <div class="credits">By: Pratheep<br>Version 1.53</div>
   <div id="score">0</div>
-  <div id="highscore">HIGHSCORE: 0</div>
+  <div id="highscore">GLOBAL HIGHSCORE: 0</div>
   <canvas id="game"></canvas>
 
-  <script>
+ <script>
     const canvas = document.getElementById("game");
     const ctx = canvas.getContext("2d");
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
+
+    // GAME STATE
+    let gameState = "start"; // "start" | "playing" | "gameover"
 
     // Ship
     const ship = {
@@ -71,18 +74,37 @@
       y: canvas.height / 2,
       width: 45,
       height: 30,
-      gravity: 0.32,  // slower fall
+      gravity: 0.32,
       lift: -9,
       velocity: 0
     };
 
     let pipes = [];
     let score = 0;
-    let gameOver = false;
     let newHighscoreThisRun = false;
 
+    function resetGame() {
+      pipes = [];
+      score = 0;
+      ship.y = canvas.height / 2;
+      ship.velocity = 0;
+      document.getElementById("score").textContent = score;
+      addPipe();
+    }
+
     function flap() {
-      if (gameOver) location.reload();
+      if (gameState === "start") {
+        gameState = "playing";
+        resetGame();
+        return;
+      }
+
+      if (gameState === "gameover") {
+        gameState = "playing";
+        resetGame();
+        return;
+      }
+
       ship.velocity = ship.lift;
     }
 
@@ -90,29 +112,30 @@
     document.addEventListener("touchstart", flap);
 
     function addPipe() {
+      if (gameState !== "playing") return;
+
       const gap = 260;
       const top = Math.random() * (canvas.height - gap - 150) + 50;
 
       pipes.push({
         x: canvas.width,
         width: 70,
-        top: top,
+        top,
         bottom: top + gap,
         scored: false
       });
     }
 
     setInterval(addPipe, 1500);
-    addPipe();
 
     function update() {
-      if (gameOver) return;
+      if (gameState !== "playing") return;
 
       ship.velocity += ship.gravity;
       ship.y += ship.velocity;
 
       if (ship.y + ship.height > canvas.height || ship.y < 0) {
-        gameOver = true;
+        gameState = "gameover";
       }
 
       pipes.forEach(pipe => {
@@ -123,7 +146,7 @@
           ship.x + ship.width > pipe.x &&
           (ship.y < pipe.top || ship.y + ship.height > pipe.bottom)
         ) {
-          gameOver = true;
+          gameState = "gameover";
         }
 
         if (pipe.x + pipe.width < ship.x && !pipe.scored) {
@@ -139,11 +162,9 @@
 
     // Draw spaceship
     function drawShip() {
-      // body
       ctx.fillStyle = "cyan";
       ctx.fillRect(ship.x, ship.y, ship.width, ship.height);
 
-      // nose
       ctx.fillStyle = "white";
       ctx.beginPath();
       ctx.moveTo(ship.x + ship.width, ship.y + ship.height / 2);
@@ -152,34 +173,26 @@
       ctx.closePath();
       ctx.fill();
 
-      // engine flame
       ctx.fillStyle = "orange";
       ctx.fillRect(ship.x + ship.width - 3, ship.y + ship.height / 2 - 4, 7, 8);
     }
 
-    // Draw pipes
     function drawPipe(pipe) {
       ctx.fillStyle = "lime";
 
-      // TOP rectangle
       ctx.fillRect(pipe.x, 0, pipe.width, pipe.top);
-
-      // TOP semicircle
       ctx.beginPath();
-      ctx.arc(pipe.x + pipe.width / 2, pipe.top, pipe.width / 2, Math.PI, 0, false);
+      ctx.arc(pipe.x + pipe.width / 2, pipe.top, pipe.width / 2, Math.PI, 0);
       ctx.fill();
 
-      // BOTTOM rectangle
       ctx.fillRect(pipe.x, pipe.bottom, pipe.width, canvas.height - pipe.bottom);
-
-      // BOTTOM semicircle
       ctx.beginPath();
-      ctx.arc(pipe.x + pipe.width / 2, pipe.bottom, pipe.width / 2, 0, Math.PI, true);
+      ctx.arc(pipe.x + pipe.width / 2, pipe.bottom, pipe.width / 2, 0, Math.PI);
       ctx.fill();
     }
 
-    function drawGameOver() {
-      ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+    function drawStartScreen() {
+      ctx.fillStyle = "rgba(0,0,0,0.7)";
       ctx.fillRect(canvas.width / 2 - 160, canvas.height / 2 - 100, 320, 200);
 
       ctx.strokeStyle = "white";
@@ -187,11 +200,39 @@
       ctx.strokeRect(canvas.width / 2 - 160, canvas.height / 2 - 100, 320, 200);
 
       ctx.fillStyle = "white";
-      ctx.font = "40px Arial";
-      ctx.fillText("GAME OVER", canvas.width / 2 - 120, canvas.height / 2 - 30);
+      ctx.textAlign = "center";
 
+      ctx.font = "40px Arial";
+      ctx.fillText("SPACE FLAPPY", canvas.width / 2, canvas.height / 2 - 30);
+
+      ctx.font = "20px Arial";
+      ctx.fillText("Press SPACE or TAP to Start", canvas.width / 2, canvas.height / 2 + 20);
+
+      ctx.textAlign = "left";
+    }
+
+    function drawGameOver() {
+      ctx.fillStyle = "rgba(0,0,0,0.7)";
+      ctx.fillRect(canvas.width / 2 - 160, canvas.height / 2 - 100, 320, 200);
+
+      ctx.strokeStyle = "red";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(canvas.width / 2 - 160, canvas.height / 2 - 100, 320, 200);
+
+      ctx.textAlign = "center";
+
+      ctx.fillStyle = "red";
+      ctx.font = "40px Arial";
+      ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 30);
+
+      ctx.fillStyle = "red";
       ctx.font = "25px Arial";
-      ctx.fillText("Noob. Skill issue detected.", canvas.width / 2 - 150, canvas.height / 2 + 20);
+      ctx.fillText("Noob. Skill issue detected.", canvas.width / 2, canvas.height / 2 + 20);
+
+      ctx.font = "18px Arial";
+      ctx.fillText("Press SPACE or TAP to Restart", canvas.width / 2, canvas.height / 2 + 55);
+
+      ctx.textAlign = "left";
 
       if (newHighscoreThisRun) {
         alert("New Highscore! Nice.");
@@ -202,14 +243,15 @@
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawShip();
-      pipes.forEach(pipe => drawPipe(pipe));
-      if (gameOver) drawGameOver();
+      pipes.forEach(drawPipe);
+
+      if (gameState === "start") drawStartScreen();
+      if (gameState === "gameover") drawGameOver();
     }
 
     const highscoreDiv = document.getElementById("highscore");
     let globalHighscore = 0;
 
-    // fetch current highscore when page loads
     async function fetchHighscore() {
       const res = await fetch("/api/highscore");
       const data = await res.json();
@@ -219,12 +261,12 @@
 
     fetchHighscore();
 
-    // check if player beats highscore
     async function checkHighscore() {
       if (score > globalHighscore) {
         globalHighscore = score;
         highscoreDiv.textContent = "GLOBAL HIGHSCORE: " + globalHighscore;
         newHighscoreThisRun = true;
+
         await fetch("/api/highscore", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -240,6 +282,7 @@
     }
 
     loop();
-  </script>
+ </script>
+
 </body>
 </html>
