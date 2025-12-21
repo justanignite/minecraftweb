@@ -1,6 +1,10 @@
 import { Redis } from '@upstash/redis';
 
-const redis = Redis.fromEnv();
+// Use the auto-generated environment variables from Vercel
+const redis = new Redis({
+  url: process.env.KV_REST_API_URL_KV_URL,
+  token: process.env.KV_REST_API_URL_KV_REST_API_TOKEN,
+});
 
 export default async function handler(req, res) {
   try {
