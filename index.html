@@ -42,18 +42,19 @@
 
     #highscore {
       position: absolute;
-      top: 60px;
-      width: 100%;
-      text-align: center;
+      top: 20px;
+      right: 20px;
+      width: auto;
+      text-align: right;
       font-size: 28px;
       font-family: Arial, sans-serif;
-      color: yellow;
+      color: rgb(154, 65, 209);
       text-shadow: 2px 2px 2px black;
     }
   </style>
 </head>
 <body>
-  <div class="credits">By: Pratheep<br>Version 1.40</div>
+  <div class="credits">By: Pratheep<br>Version 1.41</div>
   <div id="score">0</div>
   <div id="highscore">HIGHSCORE: 0</div>
   <canvas id="game"></canvas>
@@ -190,7 +191,7 @@
       ctx.fillText("GAME OVER", canvas.width / 2 - 120, canvas.height / 2 - 30);
 
       ctx.font = "25px Arial";
-      ctx.fillText("noob. Clanker. Bot.", canvas.width / 2 - 150, canvas.height / 2 + 20);
+      ctx.fillText("Noob. Skill issue detected.", canvas.width / 2 - 150, canvas.height / 2 + 20);
 
       if (newHighscoreThisRun) {
         alert("New Highscore! Nice.");
