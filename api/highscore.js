@@ -1,9 +1,11 @@
-import { kv } from "@vercel/kv";
+import { Redis } from '@upstash/redis';
+
+const redis = Redis.fromEnv();
 
 export default async function handler(req, res) {
   try {
     if (req.method === "GET") {
-      const score = (await kv.get("global_highscore")) || 0;
+      const score = (await redis.get("global_highscore")) || 0;
       return res.status(200).json({ score });
     }
 
@@ -11,8 +13,10 @@ export default async function handler(req, res) {
       const { score } = req.body;
       if (typeof score !== "number") return res.status(400).end();
 
-      const current = (await kv.get("global_highscore")) || 0;
-      if (score > current) await kv.set("global_highscore", score);
+      const current = (await redis.get("global_highscore")) || 0;
+      if (score > current) {
+        await redis.set("global_highscore", score);
+      }
 
       return res.status(200).json({ score: Math.max(score, current) });
     }
