@@ -1,6 +1,5 @@
 import { Redis } from '@upstash/redis';
 
-// Use the auto-generated environment variables from Vercel
 const redis = new Redis({
   url: process.env.KV_REST_API_URL_KV_URL,
   token: process.env.KV_REST_API_URL_KV_REST_API_TOKEN,
@@ -27,7 +26,7 @@ export default async function handler(req, res) {
 
     res.status(405).end();
   } catch (err) {
-    console.error(err);
+    console.error("KV ERROR:", err);
     res.status(500).json({ error: "KV connection failed" });
   }
 }
